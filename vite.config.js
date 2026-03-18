@@ -4,5 +4,5 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/account-rental-service/'  // Important for GitHub Pages
+  base: process.env.VITE_BASE_PATH ||  "/account-rental-service"  // Important for GitHub Pages
 })
