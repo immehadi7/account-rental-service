@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '../../context/AuthContext'
+import { login, register } from '../../api/auth.service'
 
 export default function LoginModal({ onClose }) {
+  const { login: saveUser } = useAuth()
   const [tab,      setTab]      = useState('phone')
+  const [username, setUsername] = useState('')
   const [phone,    setPhone]    = useState('')
+  const [password, setPassword] = useState('')
   const [otp,      setOtp]      = useState('')
   const [agreed,   setAgreed]   = useState(false)
   const [otpTimer, setOtpTimer] = useState(0)
   const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState('')
 
   useEffect(() => {
     if (otpTimer > 0) {
@@ -16,14 +22,46 @@ export default function LoginModal({ onClose }) {
   }, [otpTimer])
 
   const sendOtp = () => {
-    if (!phone) return
+    if (!phone) { setError('请输入手机号'); return }
     setOtpTimer(60)
+    setError('')
   }
 
-  const doLogin = () => {
-    if (!agreed) { alert('请先同意用户协议和隐私政策'); return }
+  const handleSubmit = async () => {
+    setError('')
+    if (!agreed) { setError('请先同意用户协议和隐私政策'); return }
+
     setLoading(true)
-    setTimeout(() => { setLoading(false); onClose() }, 1200)
+    try {
+      let res
+
+      if (tab === 'phone') {
+        // Register with phone
+        if (!phone) { setError('请输入手机号'); setLoading(false); return }
+        res = await register({
+          username: `user_${phone.slice(-4)}`,
+          phone,
+          password: otp || '123456',
+        })
+      } else {
+        // Login with username + password
+        if (!username || !password) {
+          setError('请输入账号和密码')
+          setLoading(false)
+          return
+        }
+        res = await login({ username, password })
+      }
+
+      // Save token and user to context
+      saveUser(res.data.token, res.data.user)
+      onClose()
+
+    } catch (err) {
+      setError(err.response?.data?.message || '登录失败，请重试')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -34,8 +72,7 @@ export default function LoginModal({ onClose }) {
       <div className="modal-enter bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
         {/* Brand header */}
         <div className="bg-gradient-to-br from-brand to-brand-dark p-8 text-center relative overflow-hidden">
-          <div
-            className="absolute inset-0 opacity-10"
+          <div className="absolute inset-0 opacity-10"
             style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white, transparent)' }}
           />
           <div className="relative">
@@ -53,7 +90,7 @@ export default function LoginModal({ onClose }) {
             {[{ k: 'phone', l: '手机验证码登录' }, { k: 'pass', l: '账号密码登录' }].map(({ k, l }) => (
               <button
                 key={k}
-                onClick={() => setTab(k)}
+                onClick={() => { setTab(k); setError('') }}
                 className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
                   tab === k ? 'bg-white text-brand shadow-sm' : 'text-gray-400'
                 }`}
@@ -93,7 +130,9 @@ export default function LoginModal({ onClose }) {
                   {otpTimer > 0 ? `${otpTimer}s后重发` : '获取验证码'}
                 </button>
               </div>
-              <div className="text-xs text-gray-400 mb-4">未注册手机号验证后自动创建账号</div>
+              <div className="text-xs text-gray-400 mb-4">
+                未注册手机号验证后自动创建账号
+              </div>
             </>
           )}
 
@@ -102,19 +141,29 @@ export default function LoginModal({ onClose }) {
             <>
               <div className="mb-3">
                 <input
-                  type="text"
-                  placeholder="请输入账号（手机/邮箱）"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="请输入用户名"
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-brand transition-colors"
                 />
               </div>
               <div className="mb-4">
                 <input
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="请输入密码"
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-brand transition-colors"
                 />
               </div>
             </>
+          )}
+
+          {/* Error message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-2.5 mb-4">
+              ⚠️ {error}
+            </div>
           )}
 
           {/* Agreement */}
@@ -127,15 +176,15 @@ export default function LoginModal({ onClose }) {
             />
             <span className="text-xs text-gray-500">
               我已阅读并同意{' '}
-              <span className="text-brand cursor-pointer">《用户协议》</span>
+              <span className="text-brand">《用户协议》</span>
               {' '}和{' '}
-              <span className="text-brand cursor-pointer">《隐私政策》</span>
+              <span className="text-brand">《隐私政策》</span>
             </span>
           </label>
 
           {/* Submit */}
           <button
-            onClick={doLogin}
+            onClick={handleSubmit}
             disabled={loading}
             className={`w-full py-3.5 rounded-xl text-base font-black text-white transition-all ${
               loading
@@ -143,7 +192,7 @@ export default function LoginModal({ onClose }) {
                 : 'bg-brand hover:bg-brand-dark shadow-lg shadow-red-100'
             }`}
           >
-            {loading ? '登录中…' : '登录 / 注册'}
+            {loading ? '处理中…' : tab === 'phone' ? '登录 / 注册' : '登录'}
           </button>
 
           {/* Divider */}
@@ -151,7 +200,9 @@ export default function LoginModal({ onClose }) {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-100" />
             </div>
-            <span className="relative bg-white px-3 text-xs text-gray-400">其他方式登录</span>
+            <span className="relative bg-white px-3 text-xs text-gray-400">
+              其他方式登录
+            </span>
           </div>
 
           {/* Social */}
