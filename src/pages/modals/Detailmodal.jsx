@@ -18,6 +18,7 @@ export default function DetailModal({ acc, onClose, onPay }) {
 
   if (!acc) return null
 
+  // ✅ Calculated RIGHT HERE — always uses latest hours state
   const basePrice  = Number(acc.price) || 0
   const rentCost   = basePrice * hours
   const grandTotal = (rentCost + 2).toFixed(2)
@@ -133,7 +134,7 @@ export default function DetailModal({ acc, onClose, onPay }) {
             </div>
             <div className="text-xs text-gray-400 mb-4">每小时 · 含担保服务费</div>
 
-            {/* Duration buttons */}
+            {/* ✅ Duration buttons */}
             <div className="mb-4">
               <div className="text-xs font-semibold text-gray-500 mb-2">
                 选择租用时长
@@ -155,7 +156,7 @@ export default function DetailModal({ acc, onClose, onPay }) {
               </div>
             </div>
 
-            {/* Price breakdown */}
+            {/* ✅ Price breakdown — updates instantly */}
             <div className="bg-gray-50 rounded-xl p-3 mb-4 text-sm">
               <div className="flex justify-between text-gray-500 mb-1.5">
                 <span>基础费用</span>
@@ -171,7 +172,7 @@ export default function DetailModal({ acc, onClose, onPay }) {
               </div>
             </div>
 
-            {/* ✅ Payment buttons — Alipay + WeChat side by side */}
+            {/* ✅ Alipay + WeChat buttons side by side */}
             <div className="flex gap-2 mb-2.5">
               <button
                 onClick={() => onPay(acc, hours, 'alipay')}
