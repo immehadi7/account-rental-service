@@ -27,6 +27,17 @@ export default function Navbar({ page, setPage, searchQ, setSearchQ, onLogin }) 
         </button>
 
         {/* Nav links */}
+
+        {user && (
+  <button
+    onClick={() => setPage('seller')}
+    className={`nav-link px-3 py-1.5 text-sm font-semibold transition-colors ${
+      page === 'seller' ? 'text-brand active' : 'text-gray-500 hover:text-brand'
+    }`}
+  >
+    🏪 卖家中心
+  </button>
+)}
         <div className="flex items-center gap-1 flex-1">
           {navItems.map(({ k, l }) => (
             <button

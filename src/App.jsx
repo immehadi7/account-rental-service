@@ -7,6 +7,9 @@ import AdminPage from './pages/AdminPage'
 import DetailModal from './pages/modals/DetailModal.jsx'
 import AlipayModal from './pages/modals/Alipaymodal.jsx'
 import LoginModal from './pages/modals/LoginModal'
+import SellerDashboard from './pages/SellerDashboard'
+
+
 
 export default function App() {
   const [page,         setPage]         = useState('home')
@@ -16,6 +19,8 @@ export default function App() {
   const [alipayHours,  setAlipayHours]  = useState(1)
   const [alipayMethod, setAlipayMethod] = useState('alipay')
   const [showLogin,    setShowLogin]    = useState(false)
+
+{page === 'seller' && <SellerDashboard setPage={setPage} />}
 
   const openAlipay = (acc, h, method = 'alipay') => {
     setSelectedAcc(acc)
