@@ -27,7 +27,7 @@ export default function DetailModal({ acc, onClose, onPay }) {
       <InquiryModal
         acc={acc}
         onClose={() => setShowInquiry(false)}
-        onPay={(a, h) => { setShowInquiry(false); onPay(a, h) }}
+        onPay={(a, h, method) => { setShowInquiry(false); onPay(a, h, method) }}
       />
     )
   }
@@ -171,16 +171,25 @@ export default function DetailModal({ acc, onClose, onPay }) {
               </div>
             </div>
 
-            <button
-              onClick={() => onPay(acc, hours)}
-              className="w-full bg-[#1678ff] hover:bg-[#0d6aed] text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 mb-2.5 transition-colors shadow-lg shadow-blue-200"
-            >
-              <span>💙</span> 支付宝付款
-            </button>
+            {/* ✅ Payment buttons — Alipay + WeChat side by side */}
+            <div className="flex gap-2 mb-2.5">
+              <button
+                onClick={() => onPay(acc, hours, 'alipay')}
+                className="flex-1 bg-[#1678ff] hover:bg-[#0d6aed] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-blue-200"
+              >
+                💙 支付宝
+              </button>
+              <button
+                onClick={() => onPay(acc, hours, 'wechat')}
+                className="flex-1 bg-[#07c160] hover:bg-[#06ad56] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-green-200"
+              >
+                💚 微信
+              </button>
+            </div>
 
             <button
               onClick={() => setShowInquiry(true)}
-              className="w-full border-2 border-brand text-brand hover:bg-brand hover:text-white font-bold py-2.5 rounded-xl text-sm transition-all mb-3"
+              className="w-full border-2 border-brand text-brand hover:bg-brand hover:text-white font-bold py-2 rounded-xl text-sm transition-all mb-3"
             >
               💬 先询单再付款
             </button>
