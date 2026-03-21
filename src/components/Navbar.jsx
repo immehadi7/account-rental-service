@@ -4,7 +4,7 @@ export default function Navbar({ page, setPage, searchQ, setSearchQ, onLogin }) 
   const { user, logout } = useAuth()
 
   const navItems = [
-    { k: 'home', l: '首页' },
+    { k: 'home', l: '首页'   },
     { k: 'post', l: '发布租号' },
     { k: 'cs',   l: '客服中心' },
   ]
@@ -12,6 +12,7 @@ export default function Navbar({ page, setPage, searchQ, setSearchQ, onLogin }) 
   return (
     <nav className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-6">
+
         {/* Logo */}
         <button
           onClick={() => setPage('home')}
@@ -38,6 +39,18 @@ export default function Navbar({ page, setPage, searchQ, setSearchQ, onLogin }) 
               {l}
             </button>
           ))}
+
+          {/* ✅ Admin link — only shows for admin users */}
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => setPage('admin')}
+              className={`nav-link px-3 py-1.5 text-sm font-semibold transition-colors ${
+                page === 'admin' ? 'text-brand active' : 'text-gray-500 hover:text-brand'
+              }`}
+            >
+              ⚙️ 管理后台
+            </button>
+          )}
         </div>
 
         {/* Search */}
@@ -46,7 +59,7 @@ export default function Navbar({ page, setPage, searchQ, setSearchQ, onLogin }) 
           <input
             value={searchQ}
             onChange={(e) => setSearchQ(e.target.value)}
-            placeholder="搜索游戏、段位…"
+            placeholder="搜索游戏、段位..."
             className="bg-transparent outline-none text-sm flex-1 text-gray-700"
           />
         </div>
@@ -54,7 +67,6 @@ export default function Navbar({ page, setPage, searchQ, setSearchQ, onLogin }) 
         {/* Auth section */}
         <div className="flex items-center gap-2">
           {user ? (
-            // Logged in — show user info + logout
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-xl px-3 py-1.5">
                 <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center text-white text-xs font-bold">
@@ -72,7 +84,6 @@ export default function Navbar({ page, setPage, searchQ, setSearchQ, onLogin }) 
               </button>
             </div>
           ) : (
-            // Not logged in — show login/register buttons
             <>
               <button
                 onClick={onLogin}
