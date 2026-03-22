@@ -49,17 +49,17 @@ export default function App() {
       {page === 'seller' && <SellerDashboard setPage={setPage} />}
       {page === 'orders' && <OrdersPage />}
 
-      {/* ── Detail Modal ── */}
-      {selectedAcc && !showAlipay && (
-        <DetailModal
-          acc={selectedAcc}
-          onClose={() => setSelectedAcc(null)}
-          onPay={(a, h, method) => {
-            setSelectedAcc(null)
-            openAlipay(a, h, method)
-          }}
-        />
-      )}
+     {selectedAcc && !showAlipay && (
+  <DetailModal
+    key={selectedAcc._id}
+    acc={selectedAcc}
+    onClose={() => setSelectedAcc(null)}
+    onPay={(a, h, method) => {
+      setSelectedAcc(null)
+      openAlipay(a, h, method)
+    }}
+  />
+)}
 
       {/* ── Alipay / WeChat Modal ── */}
       {showAlipay && selectedAcc && (

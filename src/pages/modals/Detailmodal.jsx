@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import StatusBadge from '../../components/Statusbadge.jsx'
 import InquiryModal from './InquiryModal.jsx'
 
@@ -15,20 +15,29 @@ const DURATIONS = [
 export default function DetailModal({ acc, onClose, onPay }) {
   const [hours,       setHours]       = useState(1)
   const [showInquiry, setShowInquiry] = useState(false)
+  const [cost,        setCost]        = useState(0)
+  const [total,       setTotal]       = useState('2.00')
+
+  const price = acc ? (Number(acc.price) || 0) : 0
+
+  useEffect(() => {
+    const c = price * hours
+    const t = (c + 2).toFixed(2)
+    setCost(c)
+    setTotal(t)
+  }, [hours, price])
 
   if (!acc) return null
-
-  // ✅ Calculated RIGHT HERE — always uses latest hours state
-  const basePrice  = Number(acc.price) || 0
-  const rentCost   = basePrice * hours
-  const grandTotal = (rentCost + 2).toFixed(2)
 
   if (showInquiry) {
     return (
       <InquiryModal
         acc={acc}
         onClose={() => setShowInquiry(false)}
-        onPay={(a, h, method) => { setShowInquiry(false); onPay(a, h, method) }}
+        onPay={(a, h, method) => {
+          setShowInquiry(false)
+          onPay(a, h, method)
+        }}
       />
     )
   }
@@ -66,7 +75,7 @@ export default function DetailModal({ acc, onClose, onPay }) {
 
         <div className="flex flex-col md:flex-row">
 
-          {/* ── LEFT ── */}
+          {/* LEFT */}
           <div className="flex-1 p-5">
             <div
               className="rounded-xl h-40 flex items-center justify-center text-7xl mb-4"
@@ -77,7 +86,9 @@ export default function DetailModal({ acc, onClose, onPay }) {
 
             <div className="flex flex-wrap gap-1.5 mb-3">
               {(acc.tags || []).map((t) => (
-                <span key={t} className="tag-chip bg-gray-100 text-gray-600">{t}</span>
+                <span key={t} className="tag-chip bg-gray-100 text-gray-600">
+                  {t}
+                </span>
               ))}
               <span className="tag-chip bg-green-100 text-green-700">担保交付</span>
               <span className="tag-chip bg-blue-100 text-blue-700">无封禁</span>
@@ -121,11 +132,11 @@ export default function DetailModal({ acc, onClose, onPay }) {
             </div>
           </div>
 
-          {/* ── RIGHT ── */}
+          {/* RIGHT */}
           <div className="md:w-64 p-5 border-t md:border-t-0 md:border-l border-gray-100">
 
             <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-3xl font-black text-brand">¥{basePrice}</span>
+              <span className="text-3xl font-black text-brand">¥{price}</span>
               {acc.originalPrice && (
                 <span className="text-sm text-gray-400 line-through">
                   ¥{acc.originalPrice}
@@ -134,8 +145,8 @@ export default function DetailModal({ acc, onClose, onPay }) {
             </div>
             <div className="text-xs text-gray-400 mb-4">每小时 · 含担保服务费</div>
 
-            {/* ✅ Duration buttons */}
-            <div className="mb-4">
+            {/* ✅ translate="no" prevents browser translation breaking buttons */}
+            <div className="mb-4" translate="no">
               <div className="text-xs font-semibold text-gray-500 mb-2">
                 选择租用时长
               </div>
@@ -156,11 +167,11 @@ export default function DetailModal({ acc, onClose, onPay }) {
               </div>
             </div>
 
-            {/* ✅ Price breakdown — updates instantly */}
-            <div className="bg-gray-50 rounded-xl p-3 mb-4 text-sm">
+            {/* ✅ translate="no" prevents browser translation breaking price */}
+            <div className="bg-gray-50 rounded-xl p-3 mb-4 text-sm" translate="no">
               <div className="flex justify-between text-gray-500 mb-1.5">
                 <span>基础费用</span>
-                <span>¥{basePrice} × {hours}h = ¥{rentCost}</span>
+                <span>¥{price} × {hours}h = ¥{cost}</span>
               </div>
               <div className="flex justify-between text-gray-500 mb-1.5">
                 <span>担保服务费</span>
@@ -168,11 +179,11 @@ export default function DetailModal({ acc, onClose, onPay }) {
               </div>
               <div className="flex justify-between font-bold text-gray-800 pt-2 border-t border-gray-200">
                 <span>合计</span>
-                <span className="text-brand text-base">¥{grandTotal}</span>
+                <span className="text-brand text-base">¥{total}</span>
               </div>
             </div>
 
-            {/* ✅ Alipay + WeChat buttons side by side */}
+            {/* Pay buttons */}
             <div className="flex gap-2 mb-2.5">
               <button
                 onClick={() => onPay(acc, hours, 'alipay')}
