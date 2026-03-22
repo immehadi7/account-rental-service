@@ -28,6 +28,17 @@ export default function Navbar({ page, setPage, searchQ, setSearchQ, onLogin }) 
 
         {/* Nav links */}
 
+
+{user && (
+  <button
+    onClick={() => setPage('orders')}
+    className={`nav-link px-3 py-1.5 text-sm font-semibold transition-colors ${
+      page === 'orders' ? 'text-brand active' : 'text-gray-500 hover:text-brand'
+    }`}
+  >
+    📦 我的订单
+  </button>
+)}
         {user && (
   <button
     onClick={() => setPage('seller')}
