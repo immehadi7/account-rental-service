@@ -9,7 +9,7 @@ import DetailModal from './pages/modals/DetailModal.jsx'
 import AlipayModal from './pages/modals/Alipaymodal.jsx'
 import LoginModal from './pages/modals/LoginModal'
 import OrdersPage from './pages/OrdersPage'
-import DetailModal from './pages/modals/DetailModal.jsx'
+
 
 
 
