@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import StatusBadge from '../../components/Statusbadge.jsx'
 import InquiryModal from './InquiryModal.jsx'
 
@@ -13,22 +13,39 @@ const DURATIONS = [
 ]
 
 export default function DetailModal({ acc, onClose, onPay }) {
-  const [hours,       setHours]       = useState(1)
+  const [hours, setHours] = useState(1)
   const [showInquiry, setShowInquiry] = useState(false)
-  const [cost,        setCost]        = useState(0)
-  const [total,       setTotal]       = useState('2.00')
 
-  const price = acc ? (Number(acc.price) || 0) : 0
-
-  useEffect(() => {
-    const c = price * hours
-    const t = (c + 2).toFixed(2)
-    setCost(c)
-    setTotal(t)
-  }, [hours, price])
-
+  // Early return if no account data
   if (!acc) return null
 
+  // Derived State for Pricing
+  const isFlatFee = acc.game === '三角洲行动'
+  const price = Number(acc.price) || 0
+  const serviceFee = 2.00
+  
+  // Security Deposit: Minimum ¥50 or 2x the hourly price
+  const deposit = Math.max(50, price * 2) 
+
+  // If it's a flat fee game, ignore hours for the base cost
+  const actualCost = isFlatFee ? price : price * hours
+  const grandTotal = (actualCost + serviceFee + deposit).toFixed(2)
+
+  // Payment Handler
+  const handlePayment = (method) => {
+    const checkoutSummary = {
+      isFlatFee,
+      appliedHours: isFlatFee ? null : hours,
+      baseCost: actualCost,
+      serviceFee,
+      deposit,
+      grandTotal: Number(grandTotal)
+    }
+    
+    onPay(acc, isFlatFee ? 1 : hours, method, checkoutSummary)
+  }
+
+  // Render Inquiry Modal Intercept
   if (showInquiry) {
     return (
       <InquiryModal
@@ -75,7 +92,7 @@ export default function DetailModal({ acc, onClose, onPay }) {
 
         <div className="flex flex-col md:flex-row">
 
-          {/* LEFT */}
+          {/* LEFT COLUMN */}
           <div className="flex-1 p-5">
             <div
               className="rounded-xl h-40 flex items-center justify-center text-7xl mb-4"
@@ -132,7 +149,7 @@ export default function DetailModal({ acc, onClose, onPay }) {
             </div>
           </div>
 
-          {/* RIGHT */}
+          {/* RIGHT COLUMN */}
           <div className="md:w-64 p-5 border-t md:border-t-0 md:border-l border-gray-100">
 
             <div className="flex items-baseline gap-2 mb-1">
@@ -143,56 +160,72 @@ export default function DetailModal({ acc, onClose, onPay }) {
                 </span>
               )}
             </div>
-            <div className="text-xs text-gray-400 mb-4">每小时 · 含担保服务费</div>
-
-            {/* ✅ translate="no" prevents browser translation breaking buttons */}
-            <div className="mb-4" translate="no">
-              <div className="text-xs font-semibold text-gray-500 mb-2">
-                选择租用时长
-              </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {DURATIONS.map(({ h, label }) => (
-                  <button
-                    key={h}
-                    onClick={() => setHours(h)}
-                    className={`py-1.5 rounded-lg border text-xs font-bold transition-all ${
-                      hours === h
-                        ? 'bg-brand border-brand text-white'
-                        : 'border-gray-200 text-gray-600 hover:border-brand hover:text-brand'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+            
+            <div className="text-xs text-gray-400 mb-4">
+              {isFlatFee ? '租用费用' : '每小时 · 含担保服务费'}
             </div>
 
-            {/* ✅ translate="no" prevents browser translation breaking price */}
+            {/* Duration Selector (Hidden for flat fee games) */}
+            {!isFlatFee && (
+              <div className="mb-4" translate="no">
+                <div className="text-xs font-semibold text-gray-500 mb-2">
+                  选择租用时长
+                </div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {DURATIONS.map(({ h, label }) => (
+                    <button
+                      key={h}
+                      onClick={() => setHours(h)}
+                      className={`py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                        hours === h
+                          ? 'bg-brand border-brand text-white'
+                          : 'border-gray-200 text-gray-600 hover:border-brand hover:text-brand'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Unified Price Breakdown WITH Deposit and Flat-fee Logic */}
             <div className="bg-gray-50 rounded-xl p-3 mb-4 text-sm" translate="no">
               <div className="flex justify-between text-gray-500 mb-1.5">
                 <span>基础费用</span>
-                <span>¥{price} × {hours}h = ¥{cost}</span>
+                {isFlatFee ? (
+                  <span>租用费 ¥{price}</span>
+                ) : (
+                  <span>¥{price} × {hours}h = ¥{actualCost}</span>
+                )}
               </div>
               <div className="flex justify-between text-gray-500 mb-1.5">
                 <span>担保服务费</span>
-                <span>¥2.00</span>
+                <span>¥{serviceFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-500 mb-1.5">
+                <span>安全押金</span>
+                <span>¥{deposit}</span>
               </div>
               <div className="flex justify-between font-bold text-gray-800 pt-2 border-t border-gray-200">
                 <span>合计</span>
-                <span className="text-brand text-base">¥{total}</span>
+                <span className="text-brand text-base">¥{grandTotal}</span>
+              </div>
+              <div className="text-xs text-gray-400 mt-1.5">
+                * 押金在租用结束后原路退回
               </div>
             </div>
 
             {/* Pay buttons */}
             <div className="flex gap-2 mb-2.5">
               <button
-                onClick={() => onPay(acc, hours, 'alipay')}
+                onClick={() => handlePayment('alipay')}
                 className="flex-1 bg-[#1678ff] hover:bg-[#0d6aed] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-blue-200"
               >
                 💙 支付宝
               </button>
               <button
-                onClick={() => onPay(acc, hours, 'wechat')}
+                onClick={() => handlePayment('wechat')}
                 className="flex-1 bg-[#07c160] hover:bg-[#06ad56] text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-green-200"
               >
                 💚 微信

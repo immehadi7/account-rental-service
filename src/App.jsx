@@ -10,22 +10,22 @@ import AlipayModal from './pages/modals/Alipaymodal.jsx'
 import LoginModal from './pages/modals/LoginModal'
 import OrdersPage from './pages/OrdersPage'
 
-
-
-
 export default function App() {
-  const [page,         setPage]         = useState('home')
-  const [searchQ,      setSearchQ]      = useState('')
-  const [selectedAcc,  setSelectedAcc]  = useState(null)
-  const [showAlipay,   setShowAlipay]   = useState(false)
-  const [alipayHours,  setAlipayHours]  = useState(1)
-  const [alipayMethod, setAlipayMethod] = useState('alipay')
-  const [showLogin,    setShowLogin]    = useState(false)
+  const [page,            setPage]            = useState('home')
+  const [searchQ,         setSearchQ]         = useState('')
+  const [selectedAcc,     setSelectedAcc]     = useState(null)
+  const [showAlipay,      setShowAlipay]      = useState(false)
+  const [alipayHours,     setAlipayHours]     = useState(1)
+  const [alipayMethod,    setAlipayMethod]    = useState('alipay')
+  const [showLogin,       setShowLogin]       = useState(false)
+  const [alipayTotal,     setAlipayTotal]     = useState(null) // New state for grand total override
 
-  const openAlipay = (acc, h, method = 'alipay') => {
+  // Pass summary data from DetailModal to AlipayModal
+  const openAlipay = (acc, h, method = 'alipay', summary = null) => {
     setSelectedAcc(acc)
     setAlipayHours(h)
     setAlipayMethod(method)
+    setAlipayTotal(summary?.grandTotal || null) // Extract grandTotal from summary
     setShowAlipay(true)
   }
 
@@ -43,7 +43,7 @@ export default function App() {
         setSearchQ={(s) => { setSearchQ(s); setPage('home') }}
         onLogin={() => setShowLogin(true)}
       />
-     
+      
       {/* ── Pages ── */}
       {page === 'home'   && <HomePage searchQ={searchQ} onOpen={openDetail} />}
       {page === 'post'   && <PostPage />}
@@ -52,17 +52,18 @@ export default function App() {
       {page === 'seller' && <SellerDashboard setPage={setPage} />}
       {page === 'orders' && <OrdersPage />}
 
-     {selectedAcc && !showAlipay && (
-  <DetailModal
-    key={selectedAcc._id}
-    acc={selectedAcc}
-    onClose={() => setSelectedAcc(null)}
-    onPay={(a, h, method) => {
-      setSelectedAcc(null)
-      openAlipay(a, h, method)
-    }}
-  />
-)}
+      {/* ── Detail Modal ── */}
+      {selectedAcc && !showAlipay && (
+        <DetailModal
+          key={selectedAcc._id}
+          acc={selectedAcc}
+          onClose={() => setSelectedAcc(null)}
+          onPay={(a, h, method, summary) => {
+            setSelectedAcc(null)
+            openAlipay(a, h, method, summary) 
+          }}
+        />
+      )}
 
       {/* ── Alipay / WeChat Modal ── */}
       {showAlipay && selectedAcc && (
@@ -70,9 +71,11 @@ export default function App() {
           acc={selectedAcc}
           hours={alipayHours}
           method={alipayMethod}
+          totalOverride={alipayTotal} // Pass the calculated total including deposit
           onClose={() => {
             setShowAlipay(false)
             setSelectedAcc(null)
+            setAlipayTotal(null) // Reset total on close
           }}
         />
       )}

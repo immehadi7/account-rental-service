@@ -1,6 +1,7 @@
 export const GAMES = [
-  '全部', '英雄联盟', '绝地求生', '原神',
-  'CS2', '王者荣耀', '永劫无间', 'FIFA Online', '三角洲行动',
+  '全部', '英雄联盟', '无畏契约', '绝地求生', '原神',
+  'CS2', '王者荣耀', '穿越火线', '地下城与勇士', '永劫无间', 
+  'Apex英雄', '崩坏：星穹铁道', 'FIFA Online', '三角洲行动',
 ]
 
 export const CAROUSEL_SLIDES = [
@@ -16,13 +17,13 @@ export const CAROUSEL_SLIDES = [
   },
   {
     id: 2,
-    title: '原神AR58全探索账号',
-    sub: '满命五星角色 · 全地图解锁 · 极速交付',
-    price: '¥30/小时',
+    title: '无畏契约神话账号',
+    sub: '全套紫金/龙炎 · 顶尖神话排位 · 极速交付',
+    price: '¥25/小时',
     tag: '限时特惠',
-    emoji: '🌟',
-    from: '#6d28d9',
-    to: '#4c1d95',
+    emoji: '🔫',
+    from: '#ff4655',
+    to: '#990000',
   },
   {
     id: 3,
@@ -36,23 +37,29 @@ export const CAROUSEL_SLIDES = [
   },
   {
     id: 4,
-    title: 'CS2传奇鹰账号出租',
-    sub: '无VAC记录 · 高信誉保障 · 精准皮肤',
-    price: '¥22/小时',
+    title: '地下城与勇士连击号',
+    sub: '满级打造 · 稀有天空套 · 高抗魔值',
+    price: '¥20/小时',
     tag: '品质认证',
-    emoji: '💣',
-    from: '#065f46',
-    to: '#064e3b',
+    emoji: '🧝‍♂️',
+    from: '#b8860b',
+    to: '#8b6508',
   },
 ]
 
+// Added the new highly popular games with custom colors and emojis
 const GAME_META = [
   { name: '英雄联盟', emoji: '⚔️', color: '#1e3a5f', bg: '#e8f0ff', cat: 'moba' },
+  { name: '无畏契约', emoji: '🔫', color: '#ff4655', bg: '#ffe5e7', cat: 'fps'  },
   { name: '绝地求生', emoji: '🎯', color: '#3d2b1f', bg: '#fff3e0', cat: 'fps'  },
   { name: '原神',     emoji: '🌟', color: '#4a1a6b', bg: '#f3e8ff', cat: 'rpg'  },
   { name: 'CS2',      emoji: '💣', color: '#1a2a1a', bg: '#e8ffe8', cat: 'fps'  },
   { name: '王者荣耀', emoji: '👑', color: '#5a3000', bg: '#fff8e0', cat: 'moba' },
-  { name: '永劫无间', emoji: '🔥', color: '#4a0000', bg: '#ffe8e8', cat: 'rpg'  },
+  { name: '穿越火线', emoji: '🔥', color: '#8b0000', bg: '#ffe4e1', cat: 'fps'  },
+  { name: '地下城与勇士', emoji: '🧝‍♂️', color: '#b8860b', bg: '#fff8dc', cat: 'rpg' },
+  { name: '永劫无间', emoji: '🗡️', color: '#4a0000', bg: '#ffe8e8', cat: 'rpg'  },
+  { name: 'Apex英雄', emoji: '🚀', color: '#cc0000', bg: '#ffe5e5', cat: 'fps'  },
+  { name: '崩坏：星穹铁道', emoji: '🚂', color: '#483d8b', bg: '#e6e6fa', cat: 'rpg' },
   { name: 'FIFA Online', emoji: '⚽', color: '#003a1a', bg: '#e0ffe8', cat: 'sport' },
   { name: '三角洲行动', emoji: '🪖', color: '#1a2a00', bg: '#eaffd6', cat: 'fps' },
 ]
@@ -61,13 +68,13 @@ const RANKS = ['黄金', '铂金', '钻石', '大师', '王者', '挑战者', '�
 
 const ALL_TAGS = [
   ['高胜率', '全英雄', '豪华皮肤'],
-  ['多把枪皮', '低延迟', '稳定'],
-  ['满命角色', '全探索', '强队'],
-  ['高信誉', '无VAC', '精准皮肤'],
-  ['全英雄', '传说皮肤', '顶分'],
-  ['稀有套装', '干净记录', '稳定'],
-  ['顶级球星', '高化学', '强阵容'],
-  ['特种装备', '精锐皮肤', '顶配武器'],
+  ['多把稀有武器', '满级通行证', '稳定'],
+  ['满命角色', '全探索', '极速号'],
+  ['高信誉', '无封禁', '精准皮肤'],
+  ['绝版时装', '极品装备', '顶分'],
+  ['稀有套装', '干净记录', '全天在线'],
+  ['顶级阵容', '高化学反应', '竞技号'],
+  ['特种装备', '精锐皮肤', '满级配件'],
 ]
 
 const PRICES  = [12, 15, 16, 18, 20, 22, 25, 28, 30, 35]
@@ -75,17 +82,22 @@ const EXTRAS  = [8, 10, 12, 15, 18, 20]
 const STATUSES = ['online', 'online', 'online', 'busy', 'offline']
 const DELIVERIES = [8, 10, 12, 15, 20]
 
-export const ACCOUNTS = Array.from({ length: 48 }, (_, i) => {
+// Increased length to 120 so you have exactly 10 pages of accounts to click through
+export const ACCOUNTS = Array.from({ length: 120 }, (_, i) => {
   const g        = GAME_META[i % GAME_META.length]
+  const isDelta  = g.name === '三角洲行动'
   const rank     = RANKS[Math.floor(Math.random() * RANKS.length)]
-  const price    = PRICES[Math.floor(Math.random() * PRICES.length)]
+  
+  let basePrice  = PRICES[Math.floor(Math.random() * PRICES.length)]
+  const price    = isDelta ? basePrice * 3 : basePrice
+  
   const orig     = price + EXTRAS[Math.floor(Math.random() * EXTRAS.length)]
   const status   = STATUSES[Math.floor(Math.random() * STATUSES.length)]
   const tags     = ALL_TAGS[i % ALL_TAGS.length]
   const delivery = DELIVERIES[Math.floor(Math.random() * DELIVERIES.length)]
 
   return {
-    id:       i + 1,
+    _id:      String(i + 1),
     game:     g.name,
     emoji:    g.emoji,
     color:    g.color,
@@ -97,6 +109,7 @@ export const ACCOUNTS = Array.from({ length: 48 }, (_, i) => {
     status,
     tags,
     delivery,
+    unit:     isDelta ? '租' : '小时',
     desc:     `${g.name} · ${rank}段 — ${tags[0]}，${tags[1]}，无封禁记录`,
     views:    Math.floor(Math.random() * 5000) + 500,
     orders:   Math.floor(Math.random() * 300)  + 10,

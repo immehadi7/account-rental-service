@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { createOrder } from '../../api/order.service'
 
@@ -12,20 +12,35 @@ const DURATIONS = [
   { h: 72, label: '3天' },
 ]
 
+// Games that charge flat fee (not hourly)
+const FLAT_FEE_GAMES = ['三角洲行动', 'Operation Delta']
+
 export default function InquiryModal({ acc, onClose, onPay }) {
-  const { user }        = useAuth()
-  const [step,    setStep]    = useState(1)
-  const [hours,   setHours]   = useState(1)
-  const [contact, setContact] = useState('')
-  const [note,    setNote]    = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
-  const [order,   setOrder]   = useState(null)
+  const { user }                    = useAuth()
+  const [step,    setStep]          = useState(1)
+  const [hours,   setHours]         = useState(1)
+  const [contact, setContact]       = useState('')
+  const [note,    setNote]          = useState('')
+  const [loading, setLoading]       = useState(false)
+  const [error,   setError]         = useState('')
+  const [order,   setOrder]         = useState(null)
+  const [cost,    setCost]          = useState(0)
+  const [total,   setTotal]         = useState('2.00')
 
   const basePrice  = Number(acc.price) || 0
-  const rentCost   = basePrice * hours
   const serviceFee = 2
-  const grandTotal = (rentCost + serviceFee).toFixed(2)
+  const isFlatFee  = FLAT_FEE_GAMES.includes(acc.game)
+
+  useEffect(() => {
+    if (isFlatFee) {
+      setCost(basePrice)
+      setTotal((basePrice + serviceFee).toFixed(2))
+    } else {
+      const c = basePrice * hours
+      setCost(c)
+      setTotal((c + serviceFee).toFixed(2))
+    }
+  }, [hours, basePrice, isFlatFee])
 
   const handleSubmit = async () => {
     setError('')
@@ -36,14 +51,14 @@ export default function InquiryModal({ acc, onClose, onPay }) {
     try {
       const res = await createOrder({
         accountId:     acc._id,
-        hours,
+        hours:         isFlatFee ? 1 : hours,
         buyerContact:  contact,
         note,
         paymentMethod: 'alipay',
       })
       setOrder(res.data.order)
       setStep(2)
-      setTimeout(() => setStep(3), 3000)
+      // ✅ No auto-confirm — stays at step 2 until seller confirms
     } catch (err) {
       setError(err.response?.data?.message || '询单失败，请重试')
     } finally {
@@ -81,9 +96,7 @@ export default function InquiryModal({ acc, onClose, onPay }) {
                 {step > s ? '✓' : s}
               </div>
               {i < 2 && (
-                <div className={`flex-1 h-0.5 transition-all ${
-                  step > s ? 'bg-brand' : 'bg-gray-200'
-                }`} />
+                <div className={`flex-1 h-0.5 transition-all ${step > s ? 'bg-brand' : 'bg-gray-200'}`} />
               )}
             </div>
           ))}
@@ -102,12 +115,15 @@ export default function InquiryModal({ acc, onClose, onPay }) {
                     {acc.game} · {acc.rank}段
                   </div>
                   <div className="text-xs text-gray-400">
-                    ¥{basePrice}/小时 · {acc.deliveryTime || 15}分钟内交付
+                    {isFlatFee
+                      ? `租用费 ¥${basePrice}（固定）`
+                      : `¥${basePrice}/小时 · ${acc.deliveryTime || 15}分钟内交付`
+                    }
                   </div>
                 </div>
               </div>
 
-              {/* Not logged in */}
+              {/* Not logged in warning */}
               {!user && (
                 <div className="bg-yellow-50 text-yellow-700 rounded-lg p-2.5 text-xs mb-3 flex gap-1.5">
                   <span>⚠️</span>
@@ -115,33 +131,39 @@ export default function InquiryModal({ acc, onClose, onPay }) {
                 </div>
               )}
 
-              {/* ✅ Duration buttons with days */}
-              <div className="mb-3">
-                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">
-                  租用时长
-                </label>
-                <div className="flex gap-1.5 flex-wrap">
-                  {DURATIONS.map(({ h, label }) => (
-                    <button
-                      key={h}
-                      onClick={() => setHours(h)}
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
-                        hours === h
-                          ? 'bg-brand border-brand text-white'
-                          : 'border-gray-200 text-gray-600 hover:border-brand hover:text-brand'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
+              {/* ✅ Duration buttons — hidden for flat fee games */}
+              {!isFlatFee && (
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">
+                    租用时长
+                  </label>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {DURATIONS.map(({ h, label }) => (
+                      <button
+                        key={h}
+                        onClick={() => setHours(h)}
+                        className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                          hours === h
+                            ? 'bg-brand border-brand text-white'
+                            : 'border-gray-200 text-gray-600 hover:border-brand hover:text-brand'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* ✅ Live price box */}
+              {/* ✅ Price box */}
               <div className="bg-red-50 rounded-xl p-3 mb-3">
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
                   <span>基础费用</span>
-                  <span>¥{basePrice} × {hours}h = ¥{rentCost}</span>
+                  {isFlatFee ? (
+                    <span>租用费 ¥{basePrice}</span>
+                  ) : (
+                    <span>¥{basePrice} × {hours}h = ¥{cost}</span>
+                  )}
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mb-2">
                   <span>担保服务费</span>
@@ -149,7 +171,7 @@ export default function InquiryModal({ acc, onClose, onPay }) {
                 </div>
                 <div className="flex justify-between items-center border-t border-red-100 pt-2">
                   <span className="text-xs font-bold text-gray-700">合计</span>
-                  <span className="text-lg font-black text-brand">¥{grandTotal}</span>
+                  <span className="text-lg font-black text-brand">¥{total}</span>
                 </div>
               </div>
 
@@ -215,7 +237,7 @@ export default function InquiryModal({ acc, onClose, onPay }) {
             </div>
           )}
 
-          {/* ── STEP 2 ── */}
+          {/* ── STEP 2 — Waiting for seller ── */}
           {step === 2 && (
             <div className="text-center py-8">
               <div className="w-12 h-12 border-4 border-gray-100 border-t-brand rounded-full mx-auto mb-3 spin" />
@@ -224,22 +246,32 @@ export default function InquiryModal({ acc, onClose, onPay }) {
                 预计15分钟内确认，请稍候
               </div>
               {order && (
-                <div className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-1.5 inline-block">
+                <div className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-1.5 inline-block mb-3">
                   订单号：{order.orderNo}
                 </div>
               )}
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-gray-600 text-left">
+                <div className="font-bold text-blue-700 mb-1">📋 等待须知</div>
+                <div>• 卖家确认后您会收到通知</div>
+                <div>• 确认后请在30分钟内付款</div>
+                <div>• 如需帮助联系客服：<strong>zuhao_kefu</strong></div>
+              </div>
+              <button
+                onClick={onClose}
+                className="mt-3 w-full border border-gray-200 text-gray-600 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50"
+              >
+                关闭（订单已保存）
+              </button>
             </div>
           )}
 
-          {/* ── STEP 3 ── */}
+          {/* ── STEP 3 — Seller confirmed ── */}
           {step === 3 && (
             <div className="text-center">
               <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-2xl mx-auto mb-2 pop">
                 ✅
               </div>
-              <div className="font-bold text-base text-green-600 mb-1">
-                卖家已确认！
-              </div>
+              <div className="font-bold text-base text-green-600 mb-1">卖家已确认！</div>
               <div className="text-gray-400 text-xs mb-3">
                 请在30分钟内完成付款，超时将自动取消
               </div>

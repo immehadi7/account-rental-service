@@ -1,6 +1,11 @@
-export default function AlipayModal({ acc, hours, method = 'alipay', onClose }) {
-  const total    = acc ? (acc.price * hours + 2).toFixed(2) : '0.00'
+export default function AlipayModal({ acc, hours, method = 'alipay', totalOverride, onClose }) {
+  // Use the exact total from the checkout summary, or fallback to the basic math
+  const total = totalOverride
+    ? totalOverride.toFixed(2)
+    : acc ? (acc.price * hours + 2).toFixed(2) : '0.00' 
+    
   const isWechat = method === 'wechat'
+  const isFlatFee = acc?.game === '三角洲行动'
 
   return (
     <div
@@ -25,7 +30,7 @@ export default function AlipayModal({ acc, hours, method = 'alipay', onClose }) 
           </div>
           <div className="text-2xl font-black">¥{total}</div>
           <div className="text-xs opacity-75 mt-0.5">
-            {acc?.game} · {acc?.rank}段 · {hours}小时
+            {acc?.game} · {acc?.rank}段 {isFlatFee ? '' : `· ${hours}小时`}
           </div>
         </div>
 

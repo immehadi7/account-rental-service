@@ -31,7 +31,7 @@ const Badge = ({ status }) => {
   )
 }
 
-const BarChart = ({ data, color = 'brand' }) => {
+const BarChart = ({ data }) => {
   const max = Math.max(...data.map(d => d.earnings), 1)
   return (
     <div className="flex items-end gap-1.5 h-32 mt-2">
@@ -81,7 +81,6 @@ function AccountCard({ acc, card, darkMode, onStatusToggle, onPriceUpdate }) {
 
   return (
     <div className={`rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-all ${card}`}>
-      {/* Thumb */}
       <div
         className="h-28 flex items-center justify-center text-5xl relative"
         style={{ background: 'linear-gradient(135deg,#1e3a5f22,#1e3a5f55)' }}
@@ -94,7 +93,6 @@ function AccountCard({ acc, card, darkMode, onStatusToggle, onPriceUpdate }) {
       </div>
 
       <div className="p-4">
-        {/* Title + approval */}
         <div className="flex items-center justify-between mb-2">
           <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
             {acc.game}
@@ -117,7 +115,7 @@ function AccountCard({ acc, card, darkMode, onStatusToggle, onPriceUpdate }) {
           ))}
         </div>
 
-        {/* ✅ Price editor */}
+        {/* Price editor */}
         <div className={`rounded-xl p-3 mb-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
           <div className="text-xs font-semibold text-gray-400 mb-2 uppercase">
             租金 / 小时
@@ -134,24 +132,12 @@ function AccountCard({ acc, card, darkMode, onStatusToggle, onPriceUpdate }) {
                   autoFocus
                   min="1"
                   className={`w-full border rounded-lg px-2 py-1.5 text-sm font-bold outline-none focus:border-brand ${
-                    darkMode
-                      ? 'bg-gray-600 border-gray-500 text-white'
-                      : 'border-gray-200'
+                    darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'border-gray-200'
                   }`}
                 />
               </div>
-              <button
-                onClick={savePrice}
-                className="bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors"
-              >
-                ✓
-              </button>
-              <button
-                onClick={() => { setEditPrice(false); setNewPrice(acc.price) }}
-                className="bg-gray-200 text-gray-600 px-2.5 py-1.5 rounded-lg text-xs font-bold"
-              >
-                ✕
-              </button>
+              <button onClick={savePrice} className="bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors">✓</button>
+              <button onClick={() => { setEditPrice(false); setNewPrice(acc.price) }} className="bg-gray-200 text-gray-600 px-2.5 py-1.5 rounded-lg text-xs font-bold">✕</button>
             </div>
           ) : (
             <div className="flex items-center justify-between">
@@ -161,36 +147,26 @@ function AccountCard({ acc, card, darkMode, onStatusToggle, onPriceUpdate }) {
                   onClick={() => quickAdjust(-1)}
                   disabled={acc.price <= 1}
                   className="w-7 h-7 rounded-lg bg-red-100 text-red-600 font-black hover:bg-red-200 transition-colors disabled:opacity-30 flex items-center justify-center text-base"
-                >
-                  −
-                </button>
+                >−</button>
                 <button
                   onClick={() => setEditPrice(true)}
                   className={`px-2 py-1 rounded-lg text-xs font-bold transition-colors ${
-                    darkMode
-                      ? 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-                      : 'bg-white border border-gray-200 text-gray-500 hover:border-brand hover:text-brand'
+                    darkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-white border border-gray-200 text-gray-500 hover:border-brand hover:text-brand'
                   }`}
-                >
-                  ✏️ 修改
-                </button>
+                >✏️ 修改</button>
                 <button
                   onClick={() => quickAdjust(1)}
                   className="w-7 h-7 rounded-lg bg-green-100 text-green-600 font-black hover:bg-green-200 transition-colors flex items-center justify-center text-base"
-                >
-                  +
-                </button>
+                >+</button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Stats */}
         <div className="text-xs text-gray-400 mb-3">
           👁 {acc.views || 0} 浏览 · 📦 {acc.orders || 0} 成交
         </div>
 
-        {/* Status toggle */}
         <button
           onClick={() => onStatusToggle(acc._id, acc.status)}
           className={`w-full py-2 rounded-xl text-xs font-bold transition-all ${
@@ -225,23 +201,6 @@ export default function SellerDashboard({ setPage }) {
 
   useEffect(() => { if (user) fetchAll() }, [user])
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const types = [
-        '🎉 新订单！买家提交了租用请求',
-        '💰 收到付款！请及时处理订单',
-        '⏰ 账号租用时间即将到期',
-      ]
-      setNotifications(p => [{
-        id:   Date.now(),
-        msg:  types[Math.floor(Math.random() * types.length)],
-        time: new Date().toLocaleTimeString('zh-CN'),
-        read: false,
-      }, ...p.slice(0, 9)])
-    }, 30000)
-    return () => clearInterval(timer)
-  }, [])
-
   const fetchAll = async () => {
     setLoading(true)
     try {
@@ -275,6 +234,35 @@ export default function SellerDashboard({ setPage }) {
     try {
       await updateStatus(id, next)
       setAccounts(p => p.map(a => a._id === id ? { ...a, status: next } : a))
+    } catch (err) { console.error(err) }
+  }
+
+  // ✅ Confirm order
+  const handleConfirmOrder = async (id) => {
+    try {
+      await API.patch(`/orders/${id}/confirm`)
+      fetchAll()
+      setNotifications(p => [{
+        id:   Date.now(),
+        msg:  '✅ 订单已确认！买家可以付款了',
+        time: new Date().toLocaleTimeString('zh-CN'),
+        read: false,
+      }, ...p])
+    } catch (err) { console.error(err) }
+  }
+
+  // ✅ Cancel order
+  const handleCancelOrder = async (id) => {
+    if (!window.confirm('确定取消此订单？')) return
+    try {
+      await API.patch(`/orders/${id}/cancel`)
+      fetchAll()
+      setNotifications(p => [{
+        id:   Date.now(),
+        msg:  '❌ 订单已取消',
+        time: new Date().toLocaleTimeString('zh-CN'),
+        read: false,
+      }, ...p])
     } catch (err) { console.error(err) }
   }
 
@@ -334,7 +322,6 @@ export default function SellerDashboard({ setPage }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Search */}
             <div className={`hidden md:flex items-center gap-2 border rounded-xl px-3 py-2 ${
               darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
             }`}>
@@ -388,7 +375,6 @@ export default function SellerDashboard({ setPage }) {
               )}
             </div>
 
-            {/* Dark mode toggle */}
             <button
               onClick={() => setDarkMode(!darkMode)}
               className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
@@ -398,7 +384,6 @@ export default function SellerDashboard({ setPage }) {
               {darkMode ? '☀️' : '🌙'}
             </button>
 
-            {/* Post button */}
             <button
               onClick={() => setPage('post')}
               className="bg-brand text-white font-bold px-4 py-2 rounded-xl text-sm hover:bg-brand-dark transition-colors shadow-md shadow-red-100"
@@ -430,7 +415,6 @@ export default function SellerDashboard({ setPage }) {
           ))}
         </div>
 
-        {/* ── LOADING ── */}
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {[1,2,3,4].map(i => <Skeleton key={i} className="h-28" />)}
@@ -440,7 +424,6 @@ export default function SellerDashboard({ setPage }) {
             {/* ══ OVERVIEW ══ */}
             {tab === 'overview' && (
               <div>
-                {/* Stat cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   {[
                     { ic:'💰', label:'今日收益',   val:`¥${analytics?.todayEarnings||0}`,  sub:'今天',   color:'text-brand'      },
@@ -463,13 +446,10 @@ export default function SellerDashboard({ setPage }) {
                   ))}
                 </div>
 
-                {/* Chart + Quick actions */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className={`md:col-span-2 rounded-2xl border p-5 shadow-sm ${card}`}>
                     <div className="flex items-center justify-between mb-1">
-                      <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                        📈 近7天收益
-                      </div>
+                      <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>📈 近7天收益</div>
                       <div className="text-xs text-gray-400">
                         总计：¥{analytics?.last7Days?.reduce((s,d)=>s+d.earnings,0)||0}
                       </div>
@@ -478,19 +458,15 @@ export default function SellerDashboard({ setPage }) {
                   </div>
 
                   <div className={`rounded-2xl border p-5 shadow-sm ${card}`}>
-                    <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                      ⚡ 快捷操作
-                    </div>
+                    <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>⚡ 快捷操作</div>
                     <div className="space-y-2.5">
                       {[
-                        { ic:'➕', label:'发布新账号', action:()=>setPage('post'),       color:'bg-brand text-white'          },
-                        { ic:'📦', label:'查看新订单', action:()=>setTab('orders'),      color:'bg-blue-500 text-white'       },
-                        { ic:'💸', label:'申请提现',   action:()=>{setTab('earnings');setWithdraw(true)}, color:'bg-green-500 text-white'  },
-                        { ic:'📊', label:'查看数据',   action:()=>setTab('analytics'),  color:'bg-purple-500 text-white'     },
+                        { ic:'➕', label:'发布新账号', action:()=>setPage('post'),                      color:'bg-brand text-white'        },
+                        { ic:'📦', label:'查看新订单', action:()=>setTab('orders'),                     color:'bg-blue-500 text-white'     },
+                        { ic:'💸', label:'申请提现',   action:()=>{setTab('earnings');setWithdraw(true)},color:'bg-green-500 text-white'   },
+                        { ic:'📊', label:'查看数据',   action:()=>setTab('analytics'),                  color:'bg-purple-500 text-white'   },
                       ].map(({ ic, label, action, color }) => (
-                        <button
-                          key={label}
-                          onClick={action}
+                        <button key={label} onClick={action}
                           className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 ${color}`}
                         >
                           <span>{ic}</span>{label}
@@ -500,24 +476,19 @@ export default function SellerDashboard({ setPage }) {
                   </div>
                 </div>
 
-                {/* Account status + recent orders */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className={`rounded-2xl border p-5 shadow-sm ${card}`}>
-                    <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                      🎮 账号状态
-                    </div>
+                    <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>🎮 账号状态</div>
                     {[
-                      ['🟢 在线可租', accounts.filter(a=>a.status==='online').length,  'text-green-600' ],
-                      ['🟡 租用中',   accounts.filter(a=>a.status==='busy').length,    'text-yellow-600'],
-                      ['⚫ 已下架',   accounts.filter(a=>a.status==='offline').length, 'text-gray-500'  ],
+                      ['🟢 在线可租', accounts.filter(a=>a.status==='online').length,          'text-green-600' ],
+                      ['🟡 租用中',   accounts.filter(a=>a.status==='busy').length,            'text-yellow-600'],
+                      ['⚫ 已下架',   accounts.filter(a=>a.status==='offline').length,         'text-gray-500'  ],
                       ['⏳ 审核中',   accounts.filter(a=>a.approvalStatus==='pending').length, 'text-orange-500'],
                     ].map(([label, val, color]) => (
                       <div key={label} className={`flex justify-between items-center py-2.5 border-b last:border-0 ${
                         darkMode ? 'border-gray-700' : 'border-gray-50'
                       }`}>
-                        <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                          {label}
-                        </span>
+                        <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{label}</span>
                         <span className={`text-xl font-black ${color}`}>{val}</span>
                       </div>
                     ))}
@@ -525,12 +496,8 @@ export default function SellerDashboard({ setPage }) {
 
                   <div className={`rounded-2xl border p-5 shadow-sm ${card}`}>
                     <div className="flex items-center justify-between mb-4">
-                      <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                        🕐 最近订单
-                      </div>
-                      <button onClick={() => setTab('orders')} className="text-xs text-brand">
-                        查看全部 →
-                      </button>
+                      <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>🕐 最近订单</div>
+                      <button onClick={() => setTab('orders')} className="text-xs text-brand">查看全部 →</button>
                     </div>
                     {orders.length === 0 ? (
                       <div className="text-center py-6 text-gray-400 text-sm">暂无订单</div>
@@ -562,7 +529,6 @@ export default function SellerDashboard({ setPage }) {
             {/* ══ ACCOUNT MANAGEMENT ══ */}
             {tab === 'listings' && (
               <div>
-                {/* Filters */}
                 <div className="flex items-center gap-3 mb-4 flex-wrap">
                   <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 flex-1 max-w-xs ${
                     darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
@@ -582,25 +548,16 @@ export default function SellerDashboard({ setPage }) {
                       { k:'offline', l:'⚫ 离线' },
                       { k:'pending', l:'⏳ 审核' },
                     ].map(({ k, l }) => (
-                      <button
-                        key={k}
-                        onClick={() => setFilter(k)}
+                      <button key={k} onClick={() => setFilter(k)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                          filter === k
-                            ? 'bg-brand text-white'
-                            : darkMode
-                            ? 'bg-gray-800 border border-gray-700 text-gray-300'
-                            : 'bg-white border border-gray-200 text-gray-500 hover:border-brand'
+                          filter === k ? 'bg-brand text-white' :
+                          darkMode ? 'bg-gray-800 border border-gray-700 text-gray-300' :
+                          'bg-white border border-gray-200 text-gray-500 hover:border-brand'
                         }`}
-                      >
-                        {l}
-                      </button>
+                      >{l}</button>
                     ))}
                   </div>
-                  <button
-                    onClick={() => setPage('post')}
-                    className="bg-brand text-white font-bold px-4 py-2 rounded-xl text-sm hover:bg-brand-dark ml-auto"
-                  >
+                  <button onClick={() => setPage('post')} className="bg-brand text-white font-bold px-4 py-2 rounded-xl text-sm hover:bg-brand-dark ml-auto">
                     + 发布新账号
                   </button>
                 </div>
@@ -608,15 +565,8 @@ export default function SellerDashboard({ setPage }) {
                 {filteredAccounts.length === 0 ? (
                   <div className={`rounded-2xl border p-12 text-center ${card}`}>
                     <div className="text-5xl mb-3">🎮</div>
-                    <div className={`font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-700'}`}>
-                      没有找到账号
-                    </div>
-                    <button
-                      onClick={() => setPage('post')}
-                      className="bg-brand text-white font-bold px-6 py-2.5 rounded-xl text-sm mt-2"
-                    >
-                      立即发布
-                    </button>
+                    <div className={`font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-700'}`}>没有找到账号</div>
+                    <button onClick={() => setPage('post')} className="bg-brand text-white font-bold px-6 py-2.5 rounded-xl text-sm mt-2">立即发布</button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -645,6 +595,12 @@ export default function SellerDashboard({ setPage }) {
                 }`}>
                   <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                     订单管理
+                    {/* ✅ Pending count badge */}
+                    {orders.filter(o => o.status === 'pending_confirmation').length > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                        {orders.filter(o => o.status === 'pending_confirmation').length} 待确认
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
                     <input
@@ -662,7 +618,7 @@ export default function SellerDashboard({ setPage }) {
                   <table className="w-full text-sm">
                     <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
                       <tr>
-                        {['订单号','账号','时长','金额','买家','联系方式','支付','状态','时间'].map(h => (
+                        {['订单号','账号','时长','金额','买家','联系方式','支付','状态','操作','时间'].map(h => (
                           <th key={h} className={`px-4 py-3 text-left text-xs font-semibold ${
                             darkMode ? 'text-gray-300' : 'text-gray-500'
                           }`}>{h}</th>
@@ -672,9 +628,7 @@ export default function SellerDashboard({ setPage }) {
                     <tbody>
                       {filteredOrders.map(ord => (
                         <tr key={ord._id} className={`border-b transition-colors ${
-                          darkMode
-                            ? 'border-gray-700 hover:bg-gray-700'
-                            : 'border-gray-50 hover:bg-gray-50'
+                          darkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-50 hover:bg-gray-50'
                         }`}>
                           <td className="px-4 py-3 font-mono text-xs text-gray-400">{ord.orderNo}</td>
                           <td className={`px-4 py-3 font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -686,14 +640,36 @@ export default function SellerDashboard({ setPage }) {
                           <td className="px-4 py-3 text-xs text-gray-400">{ord.buyerContact || '—'}</td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                              ord.paymentMethod === 'alipay'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-green-100 text-green-700'
+                              ord.paymentMethod === 'alipay' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
                             }`}>
                               {ord.paymentMethod === 'alipay' ? '💙 支付宝' : '💚 微信'}
                             </span>
                           </td>
-                          <td className="px-4 py-3"><Badge status={ord.status} /></td>
+                          <td className="px-4 py-3">
+                            <Badge status={ord.status} />
+                          </td>
+                          {/* ✅ Confirm + Cancel buttons */}
+                          <td className="px-4 py-3">
+                            {ord.status === 'pending_confirmation' && (
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={() => handleConfirmOrder(ord._id)}
+                                  className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                                >
+                                  ✅ 确认
+                                </button>
+                                <button
+                                  onClick={() => handleCancelOrder(ord._id)}
+                                  className="bg-red-100 hover:bg-red-200 text-red-600 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                                >
+                                  ❌ 取消
+                                </button>
+                              </div>
+                            )}
+                            {ord.status !== 'pending_confirmation' && (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-xs text-gray-400">
                             {new Date(ord.createdAt).toLocaleDateString('zh-CN')}
                           </td>
@@ -713,9 +689,9 @@ export default function SellerDashboard({ setPage }) {
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {[
-                    { ic:'💰', label:'历史总收益',   val:`¥${analytics?.totalEarnings||0}`,  color:'text-brand'     },
-                    { ic:'📅', label:'本月收益',     val:`¥${analytics?.monthEarnings||0}`,  color:'text-green-600' },
-                    { ic:'🎯', label:'今日收益',     val:`¥${analytics?.todayEarnings||0}`,  color:'text-blue-600'  },
+                    { ic:'💰', label:'历史总收益', val:`¥${analytics?.totalEarnings||0}`, color:'text-brand'     },
+                    { ic:'📅', label:'本月收益',   val:`¥${analytics?.monthEarnings||0}`, color:'text-green-600' },
+                    { ic:'🎯', label:'今日收益',   val:`¥${analytics?.todayEarnings||0}`, color:'text-blue-600'  },
                   ].map(({ ic, label, val, color }) => (
                     <div key={label} className={`rounded-2xl border p-6 shadow-sm text-center ${card}`}>
                       <div className="text-4xl mb-3">{ic}</div>
@@ -725,81 +701,44 @@ export default function SellerDashboard({ setPage }) {
                   ))}
                 </div>
 
-                {/* Withdraw */}
                 <div className={`rounded-2xl border p-5 shadow-sm mb-6 ${card}`}>
-                  <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    💸 申请提现
-                  </div>
+                  <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>💸 申请提现</div>
                   {withdraw ? (
                     <div className="space-y-3 max-w-md">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
-                          提现金额
-                        </label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">提现金额</label>
                         <input
                           type="number"
                           value={withdrawAmt}
                           onChange={e => setWithdrawAmt(e.target.value)}
                           placeholder="输入提现金额"
                           className={`w-full border rounded-xl px-4 py-3 text-sm outline-none ${
-                            darkMode
-                              ? 'bg-gray-700 border-gray-600 text-white'
-                              : 'border-gray-200 focus:border-brand'
+                            darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200 focus:border-brand'
                           }`}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
-                          提现方式
-                        </label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">提现方式</label>
                         <div className="flex gap-2">
                           {['💙 支付宝', '💚 微信', '🏦 银行卡'].map(m => (
-                            <button
-                              key={m}
-                              className={`flex-1 py-2 rounded-xl border text-sm font-bold ${
-                                darkMode
-                                  ? 'border-gray-600 text-gray-300'
-                                  : 'border-gray-200 text-gray-600 hover:border-brand hover:text-brand'
-                              }`}
-                            >
-                              {m}
-                            </button>
+                            <button key={m} className={`flex-1 py-2 rounded-xl border text-sm font-bold ${
+                              darkMode ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-600 hover:border-brand hover:text-brand'
+                            }`}>{m}</button>
                           ))}
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => setWithdraw(false)}
-                          className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold"
-                        >
-                          取消
-                        </button>
-                        <button
-                          onClick={() => {
-                            setWithdraw(false)
-                            alert('提现申请已提交，1-3工作日内到账')
-                          }}
-                          className="flex-1 bg-brand text-white py-2.5 rounded-xl text-sm font-bold hover:bg-brand-dark"
-                        >
-                          提交申请
-                        </button>
+                        <button onClick={() => setWithdraw(false)} className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold">取消</button>
+                        <button onClick={() => { setWithdraw(false); alert('提现申请已提交，1-3工作日内到账') }} className="flex-1 bg-brand text-white py-2.5 rounded-xl text-sm font-bold hover:bg-brand-dark">提交申请</button>
                       </div>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setWithdraw(true)}
-                      className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-xl text-sm transition-colors"
-                    >
-                      💸 申请提现
-                    </button>
+                    <button onClick={() => setWithdraw(true)} className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-xl text-sm transition-colors">💸 申请提现</button>
                   )}
                 </div>
 
-                {/* Transaction history */}
                 <div className={`rounded-2xl border shadow-sm overflow-hidden ${card}`}>
-                  <div className={`px-5 py-4 border-b font-bold ${
-                    darkMode ? 'border-gray-700 text-white' : 'border-gray-100 text-gray-800'
-                  }`}>
+                  <div className={`px-5 py-4 border-b font-bold ${darkMode ? 'border-gray-700 text-white' : 'border-gray-100 text-gray-800'}`}>
                     💳 交易记录
                   </div>
                   {orders.filter(o => o.status === 'completed').length === 0 ? (
@@ -807,13 +746,9 @@ export default function SellerDashboard({ setPage }) {
                   ) : (
                     <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-50'}`}>
                       {orders.filter(o => o.status === 'completed').map(ord => (
-                        <div key={ord._id} className={`flex items-center justify-between px-5 py-3.5 ${
-                          darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-                        }`}>
+                        <div key={ord._id} className={`flex items-center justify-between px-5 py-3.5 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center text-green-600 font-bold">
-                              ¥
-                            </div>
+                            <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center text-green-600 font-bold">¥</div>
                             <div>
                               <div className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                                 {ord.account?.game || '已删除'} · {ord.hours}h
@@ -841,38 +776,23 @@ export default function SellerDashboard({ setPage }) {
             {tab === 'analytics' && (
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  {/* Earnings chart */}
                   <div className={`rounded-2xl border p-5 shadow-sm ${card}`}>
-                    <div className={`font-bold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                      📈 近7天收益趋势
-                    </div>
-                    <div className="text-xs text-gray-400 mb-2">
-                      总计：¥{analytics?.last7Days?.reduce((s,d)=>s+d.earnings,0)||0}
-                    </div>
+                    <div className={`font-bold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>📈 近7天收益趋势</div>
+                    <div className="text-xs text-gray-400 mb-2">总计：¥{analytics?.last7Days?.reduce((s,d)=>s+d.earnings,0)||0}</div>
                     {analytics?.last7Days && <BarChart data={analytics.last7Days} />}
                   </div>
-
-                  {/* Orders chart */}
                   <div className={`rounded-2xl border p-5 shadow-sm ${card}`}>
-                    <div className={`font-bold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                      📦 近7天订单量
-                    </div>
-                    <div className="text-xs text-gray-400 mb-2">
-                      总计：{analytics?.last7Days?.reduce((s,d)=>s+d.orders,0)||0} 单
-                    </div>
+                    <div className={`font-bold mb-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>📦 近7天订单量</div>
+                    <div className="text-xs text-gray-400 mb-2">总计：{analytics?.last7Days?.reduce((s,d)=>s+d.orders,0)||0} 单</div>
                     {analytics?.last7Days && (
                       <div className="flex items-end gap-1.5 h-32 mt-2">
                         {analytics.last7Days.map((d, i) => {
                           const max = Math.max(...analytics.last7Days.map(x=>x.orders), 1)
                           return (
                             <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                              <div className="text-xs text-blue-500 font-bold">
-                                {d.orders > 0 ? d.orders : ''}
-                              </div>
-                              <div
-                                className="w-full bg-blue-500 rounded-t-lg transition-all duration-500 min-h-[4px]"
-                                style={{ height:`${Math.max((d.orders/max)*80,4)}px`, opacity:0.7 }}
-                              />
+                              <div className="text-xs text-blue-500 font-bold">{d.orders > 0 ? d.orders : ''}</div>
+                              <div className="w-full bg-blue-500 rounded-t-lg transition-all duration-500 min-h-[4px]"
+                                style={{ height:`${Math.max((d.orders/max)*80,4)}px`, opacity:0.7 }} />
                               <div className="text-xs text-gray-400 whitespace-nowrap">{d.date}</div>
                             </div>
                           )
@@ -882,11 +802,8 @@ export default function SellerDashboard({ setPage }) {
                   </div>
                 </div>
 
-                {/* Top games */}
                 <div className={`rounded-2xl border p-5 shadow-sm mb-4 ${card}`}>
-                  <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    🏆 最佳表现游戏
-                  </div>
+                  <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>🏆 最佳表现游戏</div>
                   {!analytics?.topGames?.length ? (
                     <div className="text-center py-6 text-gray-400 text-sm">暂无数据</div>
                   ) : (
@@ -898,23 +815,15 @@ export default function SellerDashboard({ setPage }) {
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
                               i===0 ? 'bg-yellow-400 text-yellow-900' :
                               i===1 ? 'bg-gray-300 text-gray-700' :
-                              i===2 ? 'bg-orange-400 text-orange-900' :
-                                      'bg-gray-100 text-gray-500'
-                            }`}>
-                              {i+1}
-                            </div>
+                              i===2 ? 'bg-orange-400 text-orange-900' : 'bg-gray-100 text-gray-500'
+                            }`}>{i+1}</div>
                             <div className="flex-1">
                               <div className="flex justify-between mb-1">
-                                <span className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                  {g.game}
-                                </span>
+                                <span className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{g.game}</span>
                                 <span className="text-sm font-black text-brand">¥{g.earnings}</span>
                               </div>
                               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-brand rounded-full transition-all duration-700"
-                                  style={{ width:`${(g.earnings/max)*100}%` }}
-                                />
+                                <div className="h-full bg-brand rounded-full transition-all duration-700" style={{ width:`${(g.earnings/max)*100}%` }} />
                               </div>
                               <div className="text-xs text-gray-400 mt-0.5">{g.orders} 笔订单</div>
                             </div>
@@ -925,7 +834,6 @@ export default function SellerDashboard({ setPage }) {
                   )}
                 </div>
 
-                {/* Summary stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { label:'总账号数', val: accounts.length,                                    color:'text-blue-600'   },
@@ -945,43 +853,27 @@ export default function SellerDashboard({ setPage }) {
             {/* ══ SETTINGS ══ */}
             {tab === 'settings' && (
               <div className="max-w-2xl">
-                {/* Profile */}
                 <div className={`rounded-2xl border p-5 shadow-sm mb-4 ${card}`}>
-                  <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    👤 个人信息
-                  </div>
+                  <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>👤 个人信息</div>
                   <div className="space-y-3">
                     {[
-                      ['用户名', user.username,    'text' ],
-                      ['手机号', user.phone||'',   'tel'  ],
-                      ['邮箱',   user.email||'',   'email'],
+                      ['用户名', user.username, 'text'],
+                      ['手机号', user.phone||'', 'tel'],
+                      ['邮箱',   user.email||'', 'email'],
                     ].map(([label, val, type]) => (
                       <div key={label}>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
-                          {label}
-                        </label>
-                        <input
-                          type={type}
-                          defaultValue={val}
-                          className={`w-full border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${
-                            darkMode
-                              ? 'bg-gray-700 border-gray-600 text-white focus:border-brand'
-                              : 'border-gray-200 focus:border-brand'
-                          }`}
-                        />
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">{label}</label>
+                        <input type={type} defaultValue={val} className={`w-full border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${
+                          darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-brand' : 'border-gray-200 focus:border-brand'
+                        }`} />
                       </div>
                     ))}
-                    <button className="bg-brand text-white font-bold px-6 py-2.5 rounded-xl text-sm hover:bg-brand-dark transition-colors">
-                      保存修改
-                    </button>
+                    <button className="bg-brand text-white font-bold px-6 py-2.5 rounded-xl text-sm hover:bg-brand-dark transition-colors">保存修改</button>
                   </div>
                 </div>
 
-                {/* Payment methods */}
                 <div className={`rounded-2xl border p-5 shadow-sm mb-4 ${card}`}>
-                  <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    💳 收款方式
-                  </div>
+                  <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>💳 收款方式</div>
                   <div className="space-y-3">
                     {[
                       { ic:'💙', label:'支付宝账号', placeholder:'请输入支付宝账号' },
@@ -989,70 +881,34 @@ export default function SellerDashboard({ setPage }) {
                       { ic:'🏦', label:'银行卡号',   placeholder:'请输入银行卡号'   },
                     ].map(({ ic, label, placeholder }) => (
                       <div key={label}>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
-                          {ic} {label}
-                        </label>
-                        <input
-                          placeholder={placeholder}
-                          className={`w-full border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${
-                            darkMode
-                              ? 'bg-gray-700 border-gray-600 text-white focus:border-brand'
-                              : 'border-gray-200 focus:border-brand'
-                          }`}
-                        />
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">{ic} {label}</label>
+                        <input placeholder={placeholder} className={`w-full border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${
+                          darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-brand' : 'border-gray-200 focus:border-brand'
+                        }`} />
                       </div>
                     ))}
-                    <button className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors">
-                      保存收款方式
-                    </button>
+                    <button className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors">保存收款方式</button>
                   </div>
                 </div>
 
-                {/* Security */}
                 <div className={`rounded-2xl border p-5 shadow-sm ${card}`}>
-                  <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    🔒 安全设置
-                  </div>
+                  <div className={`font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>🔒 安全设置</div>
                   <div className="space-y-3">
                     {['当前密码', '新密码'].map(label => (
                       <div key={label}>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
-                          {label}
-                        </label>
-                        <input
-                          type="password"
-                          placeholder={`输入${label}`}
-                          className={`w-full border rounded-xl px-4 py-3 text-sm outline-none ${
-                            darkMode
-                              ? 'bg-gray-700 border-gray-600 text-white focus:border-brand'
-                              : 'border-gray-200 focus:border-brand'
-                          }`}
-                        />
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">{label}</label>
+                        <input type="password" placeholder={`输入${label}`} className={`w-full border rounded-xl px-4 py-3 text-sm outline-none ${
+                          darkMode ? 'bg-gray-700 border-gray-600 text-white focus:border-brand' : 'border-gray-200 focus:border-brand'
+                        }`} />
                       </div>
                     ))}
-
-                    {/* Dark mode toggle */}
-                    <div className={`flex items-center justify-between py-2 border-t ${
-                      darkMode ? 'border-gray-700' : 'border-gray-100'
-                    }`}>
-                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        🌙 深色模式
-                      </span>
-                      <button
-                        onClick={() => setDarkMode(!darkMode)}
-                        className={`w-12 h-6 rounded-full transition-colors relative ${
-                          darkMode ? 'bg-brand' : 'bg-gray-200'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${
-                          darkMode ? 'left-6' : 'left-0.5'
-                        }`} />
+                    <div className={`flex items-center justify-between py-2 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>🌙 深色模式</span>
+                      <button onClick={() => setDarkMode(!darkMode)} className={`w-12 h-6 rounded-full transition-colors relative ${darkMode ? 'bg-brand' : 'bg-gray-200'}`}>
+                        <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${darkMode ? 'left-6' : 'left-0.5'}`} />
                       </button>
                     </div>
-
-                    <button className="bg-brand text-white font-bold px-6 py-2.5 rounded-xl text-sm hover:bg-brand-dark transition-colors">
-                      修改密码
-                    </button>
+                    <button className="bg-brand text-white font-bold px-6 py-2.5 rounded-xl text-sm hover:bg-brand-dark transition-colors">修改密码</button>
                   </div>
                 </div>
               </div>
