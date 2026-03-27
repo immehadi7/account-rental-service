@@ -94,12 +94,30 @@ export default function DetailModal({ acc, onClose, onPay }) {
 
           {/* LEFT COLUMN */}
           <div className="flex-1 p-5">
-            <div
-              className="rounded-xl h-40 flex items-center justify-center text-7xl mb-4"
-              style={{ background: 'linear-gradient(135deg,#1e3a5f22,#1e3a5f55)' }}
-            >
-              {acc.emoji || '🎮'}
-            </div>
+            {/* ✅ Show images if available, else show emoji */}
+            {acc.images && acc.images.length > 0 ? (
+              <div className="mb-4">
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {acc.images.map((src, i) => (
+                    <img
+                      key={i}
+                      src={src}
+                      alt={`账号截图${i + 1}`}
+                      className="w-32 h-32 rounded-xl object-cover flex-shrink-0 border border-gray-100 cursor-pointer hover:scale-105 transition-transform"
+                      onClick={() => window.open(src, '_blank')}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400 mt-1">点击图片可放大查看</p>
+              </div>
+            ) : (
+              <div
+                className="rounded-xl h-40 flex items-center justify-center text-7xl mb-4"
+                style={{ background: 'linear-gradient(135deg,#1e3a5f22,#1e3a5f55)' }}
+              >
+                {acc.emoji || '🎮'}
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-1.5 mb-3">
               {(acc.tags || []).map((t) => (
@@ -119,7 +137,7 @@ export default function DetailModal({ acc, onClose, onPay }) {
               {[
                 [acc.views?.toLocaleString() || '0', '浏览量'],
                 [acc.orders || '0',                  '成交量'],
-                ['⭐ 4.9',                            '评分'  ],
+                ['⭐ 4.9',                           '评分'  ],
               ].map(([v, k]) => (
                 <div key={k} className="bg-gray-50 rounded-lg p-2.5 text-center">
                   <div className="font-bold text-gray-800 text-sm">{v}</div>
