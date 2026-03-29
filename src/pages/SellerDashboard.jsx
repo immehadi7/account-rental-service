@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getMyAccounts, updateStatus } from '../api/account.service'
+import { getMyAccounts, updateStatus, updateCommissionDeposit } from '../api/account.service'
 import { getSellerOrders } from '../api/order.service'
 import API from '../api/axios'
 
@@ -58,10 +58,14 @@ const Skeleton = ({ className = '' }) => (
   <div className={`bg-gray-200 rounded-xl animate-pulse ${className}`} />
 )
 
-// ── Account Card with price editor ──
-function AccountCard({ acc, card, darkMode, onStatusToggle, onPriceUpdate }) {
-  const [editPrice, setEditPrice] = useState(false)
-  const [newPrice,  setNewPrice]  = useState(acc.price)
+// ── Account Card with price, commission, and deposit editor ──
+function AccountCard({ acc, card, darkMode, onStatusToggle, onPriceUpdate, onCommissionDepositUpdate }) {
+  const [editPrice,      setEditPrice]      = useState(false)
+  const [newPrice,       setNewPrice]       = useState(acc.price)
+  const [editCD,         setEditCD]         = useState(false)
+  const [newCommission,  setNewCommission]  = useState(acc.commission ?? 8)
+  const [newDeposit,     setNewDeposit]     = useState(acc.deposit ?? '')
+  const [cdLoading,      setCdLoading]      = useState(false)
 
   const savePrice = async () => {
     try {
@@ -79,8 +83,29 @@ function AccountCard({ acc, card, darkMode, onStatusToggle, onPriceUpdate }) {
     } catch (err) { console.error(err) }
   }
 
+  const saveCommissionDeposit = async () => {
+    setCdLoading(true)
+    try {
+      await updateCommissionDeposit(acc._id, {
+        commission: Number(newCommission),
+        deposit:    newDeposit === '' ? null : Number(newDeposit),
+      })
+      onCommissionDepositUpdate(acc._id, {
+        commission: Number(newCommission),
+        deposit:    newDeposit === '' ? null : Number(newDeposit),
+      })
+      setEditCD(false)
+    } catch (err) {
+      console.error(err)
+      alert('保存失败，请重试')
+    } finally {
+      setCdLoading(false)
+    }
+  }
+
   return (
     <div className={`rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-all ${card}`}>
+      {/* Thumb */}
       <div
         className="h-28 flex items-center justify-center text-5xl relative"
         style={{ background: 'linear-gradient(135deg,#1e3a5f22,#1e3a5f55)' }}
@@ -93,6 +118,7 @@ function AccountCard({ acc, card, darkMode, onStatusToggle, onPriceUpdate }) {
       </div>
 
       <div className="p-4">
+        {/* Title + approval */}
         <div className="flex items-center justify-between mb-2">
           <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
             {acc.game}
@@ -129,44 +155,111 @@ function AccountCard({ acc, card, darkMode, onStatusToggle, onPriceUpdate }) {
                   value={newPrice}
                   onChange={e => setNewPrice(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && savePrice()}
-                  autoFocus
-                  min="1"
+                  autoFocus min="1"
                   className={`w-full border rounded-lg px-2 py-1.5 text-sm font-bold outline-none focus:border-brand ${
                     darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'border-gray-200'
                   }`}
                 />
               </div>
-              <button onClick={savePrice} className="bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors">✓</button>
+              <button onClick={savePrice} className="bg-green-500 hover:bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold">✓</button>
               <button onClick={() => { setEditPrice(false); setNewPrice(acc.price) }} className="bg-gray-200 text-gray-600 px-2.5 py-1.5 rounded-lg text-xs font-bold">✕</button>
             </div>
           ) : (
             <div className="flex items-center justify-between">
               <span className="text-xl font-black text-brand">¥{acc.price}</span>
               <div className="flex items-center gap-1">
-                <button
-                  onClick={() => quickAdjust(-1)}
-                  disabled={acc.price <= 1}
-                  className="w-7 h-7 rounded-lg bg-red-100 text-red-600 font-black hover:bg-red-200 transition-colors disabled:opacity-30 flex items-center justify-center text-base"
-                >−</button>
-                <button
-                  onClick={() => setEditPrice(true)}
-                  className={`px-2 py-1 rounded-lg text-xs font-bold transition-colors ${
-                    darkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-white border border-gray-200 text-gray-500 hover:border-brand hover:text-brand'
-                  }`}
-                >✏️ 修改</button>
-                <button
-                  onClick={() => quickAdjust(1)}
-                  className="w-7 h-7 rounded-lg bg-green-100 text-green-600 font-black hover:bg-green-200 transition-colors flex items-center justify-center text-base"
-                >+</button>
+                <button onClick={() => quickAdjust(-1)} disabled={acc.price <= 1}
+                  className="w-7 h-7 rounded-lg bg-red-100 text-red-600 font-black hover:bg-red-200 disabled:opacity-30 flex items-center justify-center text-base">−</button>
+                <button onClick={() => setEditPrice(true)}
+                  className={`px-2 py-1 rounded-lg text-xs font-bold ${darkMode ? 'bg-gray-600 text-gray-300' : 'bg-white border border-gray-200 text-gray-500 hover:border-brand hover:text-brand'}`}>
+                  ✏️ 修改
+                </button>
+                <button onClick={() => quickAdjust(1)}
+                  className="w-7 h-7 rounded-lg bg-green-100 text-green-600 font-black hover:bg-green-200 flex items-center justify-center text-base">+</button>
               </div>
             </div>
           )}
         </div>
 
+        {/* ✅ Commission + Deposit editor */}
+        <div className={`rounded-xl p-3 mb-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-semibold text-gray-400 uppercase">
+              佣金 & 押金
+            </div>
+            <button
+              onClick={() => setEditCD(!editCD)}
+              className="text-xs text-brand font-bold"
+            >
+              {editCD ? '取消' : '✏️ 编辑'}
+            </button>
+          </div>
+
+          {editCD ? (
+            <div className="space-y-2">
+              {/* Commission */}
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">
+                  佣金比例 (0-100%)
+                </label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    value={newCommission}
+                    onChange={e => setNewCommission(e.target.value)}
+                    min="0" max="100"
+                    className={`w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:border-brand ${
+                      darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'border-gray-200'
+                    }`}
+                  />
+                  <span className="text-gray-400 text-sm font-bold">%</span>
+                </div>
+              </div>
+
+              {/* Deposit */}
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">
+                  押金金额（留空=不收押金）
+                </label>
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-400 text-sm">¥</span>
+                  <input
+                    type="number"
+                    value={newDeposit}
+                    onChange={e => setNewDeposit(e.target.value)}
+                    placeholder="不收押金"
+                    min="0"
+                    className={`w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:border-brand ${
+                      darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'border-gray-200'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={saveCommissionDeposit}
+                disabled={cdLoading}
+                className="w-full bg-brand text-white py-1.5 rounded-lg text-xs font-bold hover:bg-brand-dark transition-colors disabled:opacity-50"
+              >
+                {cdLoading ? '保存中...' : '✓ 保存'}
+              </button>
+            </div>
+          ) : (
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>佣金：<strong className="text-gray-700">{acc.commission ?? 8}%</strong></span>
+              <span>押金：<strong className="text-gray-700">
+                {acc.deposit != null && acc.deposit > 0 ? `¥${acc.deposit}` : '不收'}
+              </strong></span>
+            </div>
+          )}
+        </div>
+
+        {/* Stats */}
         <div className="text-xs text-gray-400 mb-3">
           👁 {acc.views || 0} 浏览 · 📦 {acc.orders || 0} 成交
         </div>
 
+        {/* Status toggle */}
         <button
           onClick={() => onStatusToggle(acc._id, acc.status)}
           className={`w-full py-2 rounded-xl text-xs font-bold transition-all ${
@@ -579,6 +672,9 @@ export default function SellerDashboard({ setPage }) {
                         onStatusToggle={toggleStatus}
                         onPriceUpdate={(id, price) =>
                           setAccounts(p => p.map(a => a._id === id ? { ...a, price } : a))
+                        }
+                        onCommissionDepositUpdate={(id, data) =>
+                          setAccounts(p => p.map(a => a._id === id ? { ...a, ...data } : a))
                         }
                       />
                     ))}

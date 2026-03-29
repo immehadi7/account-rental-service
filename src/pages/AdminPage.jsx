@@ -273,7 +273,7 @@ export default function AdminPage() {
                       {[
                         { label: `审核账号 (${stats.pendingAccounts})`,  tab: 'accounts', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
                         { label: `待付款订单 (${stats.pendingPayments})`, tab: 'payments', color: 'bg-blue-50 text-blue-700 border-blue-200'       },
-                        { label: `封禁用户 (${stats.bannedUsers})`,       tab: 'users',    color: 'bg-red-50 text-red-600 border-red-200'           },
+                        { label: `封禁用户 (${stats.bannedUsers})`,       tab: 'users',    color: 'bg-red-50 text-red-600 border-red-200'          },
                       ].map(({ label, tab: t, color }) => (
                         <button
                           key={t}
@@ -430,7 +430,7 @@ export default function AdminPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50">
                       <tr>
-                        {['账号','段位','价格','卖家','在线状态','审核状态','操作'].map(h => (
+                        {['游戏','段位','价格','佣金','押金','卖家','在线状态','审核状态','操作'].map(h => (
                           <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500">{h}</th>
                         ))}
                       </tr>
@@ -449,6 +449,12 @@ export default function AdminPage() {
                           </td>
                           <td className="px-4 py-3 text-gray-600">{acc.rank}</td>
                           <td className="px-4 py-3 font-bold text-brand">¥{acc.price}/h</td>
+                          <td className="px-4 py-3 text-gray-500 text-xs">
+                            {acc.commission ?? 8}%
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-xs">
+                            {acc.deposit != null && acc.deposit > 0 ? `¥${acc.deposit}` : '不收'}
+                          </td>
                           <td className="px-4 py-3 text-gray-500 text-xs">
                             {acc.seller?.username || '未知'}
                           </td>
