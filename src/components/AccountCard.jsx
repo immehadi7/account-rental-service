@@ -1,4 +1,4 @@
-import StatusBadge from './Statusbadge'
+import StatusBadge from './StatusBadge.jsx'
 
 export default function AccountCard({ acc, onClick }) {
   return (

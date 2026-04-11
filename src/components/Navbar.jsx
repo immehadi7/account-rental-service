@@ -22,7 +22,7 @@ export default function Navbar({ page, setPage, searchQ, setSearchQ, onLogin }) 
             租
           </div>
           <span className="font-black text-gray-800 text-base hidden sm:block">
-            61租号
+            28lt
           </span>
         </button>
 

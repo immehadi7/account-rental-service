@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import StatusBadge from '../../components/Statusbadge.jsx'
+import StatusBadge from '../../components/StatusBadge.jsx'
 import InquiryModal from './InquiryModal.jsx'
 
 const DURATIONS = [

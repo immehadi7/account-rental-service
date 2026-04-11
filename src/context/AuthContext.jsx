@@ -4,15 +4,24 @@ import { getMe } from '../api/auth.service'
 const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
-  const [user,    setUser]    = useState(null)
+  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // On app load — check if token exists and fetch user
   useEffect(() => {
     const token = localStorage.getItem('token')
+    const cachedUser = localStorage.getItem('user')
+    if (cachedUser && !user) {
+      try {
+        setUser(JSON.parse(cachedUser))
+      } catch {}
+    }
+
     if (token) {
       getMe()
-        .then(res => setUser(res.data.user))
+        .then((res) => {
+          setUser(res.data.user)
+          localStorage.setItem('user', JSON.stringify(res.data.user))
+        })
         .catch(() => {
           localStorage.removeItem('token')
           localStorage.removeItem('user')
@@ -36,7 +45,6 @@ export const AuthProvider = ({ children }) => {
     setUser(null)
   }
 
-  // Don't render app until we know if user is logged in
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -48,11 +56,7 @@ export const AuthProvider = ({ children }) => {
     )
   }
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
 }
 
 export const useAuth = () => useContext(AuthContext)
